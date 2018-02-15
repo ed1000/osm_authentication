@@ -29,7 +29,7 @@ def auth_get():
     subj = TokenValidator().validate_token(subj_token)
 
     if subj is None:
-        return make_response('subj token not found', 404)
+        return make_response('subject token not found', 404)
     
     if Config.EXTERNAL_MAPPING_VERIFICATION is True and ext_token is not None:
         # TODO: Verify external mapping
