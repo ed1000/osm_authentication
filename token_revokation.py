@@ -4,18 +4,19 @@ from keystoneauth1.exceptions.base import ClientException
 from keystoneclient.v3 import client
 
 from user import User
+from settings import Config
 
 
 class TokenRevokator:
     def __init__(self):
-        self.auth_url = settings.KEYSTONE_URL
-        self.username = settings.KEYSTONE_USERNAME
-        self.password = settings.KEYSTONE_PASSWORD
-        self.project = settings.KEYSTONE_PROJECT
-        self.admin_project = settings.KEYSTONE_ADMIN_PROJECT
-        self.service_project = settings.KEYSTONE_SERVICE_PROJECT
-        self.user_domain_name = settings.KEYSTONE_USER_DOMAIN_NAME
-        self.project_domain_name = settings.KEYSTONE_PROJECT_DOMAIN_NAME
+        self.auth_url = Config.KEYSTONE_URL
+        self.username = Config.KEYSTONE_USERNAME
+        self.password = Config.KEYSTONE_PASSWORD
+        self.project = Config.KEYSTONE_PROJECT
+        self.admin_project = Config.KEYSTONE_ADMIN_PROJECT
+        self.service_project = Config.KEYSTONE_SERVICE_PROJECT
+        self.user_domain_name = Config.KEYSTONE_USER_DOMAIN_NAME
+        self.project_domain_name = Config.KEYSTONE_PROJECT_DOMAIN_NAME
 
     def revoke_token(self, token):
         try:
@@ -28,7 +29,7 @@ class TokenRevokator:
             sess = session.Session(auth=auth)
             keystone = client.Client(session=sess)
 
-            keystone.tokens.revoke(token=token)
+            keystone.tokens.revoke_token(token=token)
 
             return True
         except ClientException as ex:

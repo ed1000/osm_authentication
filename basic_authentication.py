@@ -66,17 +66,15 @@ class BasicAuthentication:
                 password=password,
                 user_domain_name=self.user_domain_name)
 
-            pprint.pprint(token)
-
             projects = keystone.projects.list(user=token.get('user').get('id'))
 
-            enabled_projects = map(map_to_string,list(filter(filter_enabled_projects, projects)))
+            enabled_projects = map(map_to_string, list(filter(filter_enabled_projects, projects)))
             enabled_token = len(list(filter(is_enabled, projects))) != 0
             admin_token = len(list(filter(is_admin, projects))) != 0
             service_token = len(list(filter(is_service, projects))) != 0
 
-            issued_at = token.get('issued')
-            expires_at = token.get('expires')
+            issued_at = token.get('issued_at')
+            expires_at = token.get('expires_at')
 
             return User(username=username,
                         projects=enabled_projects,
