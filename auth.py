@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from flask import Flask, request, make_response, abort, jsonify
 
 from basic_authentication import BasicAuthentication
@@ -58,7 +57,7 @@ def auth_post():
         auth_token = req_data.get('token')
 
         if auth_token is not None:
-            user = TokenAuthentication().authenticate(req_token=auth_token)
+            user = TokenAuthentication().authenticate(token=auth_token)
 
             if user is None:
                 return make_response('token not found.', 404)
