@@ -1,4 +1,7 @@
 class Config:
+    AUTHORIZATION_IP = ''
+    ACCOUNTING_IP = ''
+
     KEYSTONE_URL = ''
     KEYSTONE_USERNAME = ''
     KEYSTONE_PASSWORD = ''
@@ -9,3 +12,4 @@ class Config:
     KEYSTONE_PROJECT_DOMAIN_NAME = ''
 
     EXTERNAL_MAPPING_VERIFICATION = False
+    EXTERNAL_AUTHENTICATOR_IP = ''
