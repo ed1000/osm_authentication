@@ -29,7 +29,7 @@ def auth_get():
 def auth_post():
     """Method to authenticate users (using credentials or tokens)"""
     req_data = request.get_json()
-    resp_data = dict()
+    resp_data = None
     gen_token = None
     auth_method = req_data.get('method')
 
@@ -47,8 +47,7 @@ def auth_post():
                 return make_response('user not found.', 404)
 
             gen_token = user.token
-            resp_data['username'] = user.username
-            resp_data['projects'] = user.projects
+            resp_data = user.to_public_dict()
         elif auth_user is None:
             return make_response('user must be provided.', 400)
         else:
@@ -63,8 +62,7 @@ def auth_post():
                 return make_response('token not found.', 404)
 
             gen_token = user.token
-            resp_data['username'] = user.username
-            resp_data['projects'] = user.projects
+            resp_data = user.to_public_dict()
         else:
             return make_response('token must be provided.', 400)
     else:
