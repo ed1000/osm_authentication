@@ -7,7 +7,7 @@ from user import User
 from settings import Config
 
 
-class TokenRevokator:
+class TokenRevocator:
     def __init__(self):
         self.auth_url = Config.KEYSTONE_URL
         self.username = Config.KEYSTONE_USERNAME

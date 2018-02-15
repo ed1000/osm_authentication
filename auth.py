@@ -1,9 +1,9 @@
 from flask import Flask, request, make_response, abort, jsonify
 
-from basic_authentication import BasicAuthentication
-from token_authentication import TokenAuthentication
-from token_validation import TokenValidator
-from token_revokation import TokenRevokator
+from authenticators.basic_authentication import BasicAuthentication
+from authenticators.token_authentication import TokenAuthentication
+from validators.token_validation import TokenValidator
+from revocators.token_revocation import TokenRevocator
 from user import User
 from settings import Config
 
@@ -14,21 +14,28 @@ app = Flask(__name__)
 @app.route('/auth', methods=['GET'])
 def auth_get():
     """Method to validate tokens and get information"""
-    req_serv_token = request.headers.get('X-Service-Token')
-    req_user_token = request.headers.get('X-User-Token')
-    req_is_ext_token = request.headers.get('X-Is-External-Token', False)
+    serv_token = request.headers.get('X-Service-Token')
+    subj_token = request.headers.get('X-Subject-Token')
+    ext_token = request.headers.get('X-External-Token')
 
-    if req_serv_token is None:
+    if serv_token is None:
         return make_response('service token must be provided.', 400)
     
-    # TODO: Validate service token
+    service = TokenValidator().validate_token(serv_token)
 
-    if req_user_token is None:
-        return make_response('user token must be provided.', 400)
+    if service is None or service.is_service is False:
+        return make_response('validation must be done by service user', 400)
 
-    # TODO: Validate user token (check if external provider provided)
+    subj = TokenValidator().validate_token(subj_token)
 
-    return 'Hello, World!'
+    if subj is None:
+        return make_response('subj token not found', 404)
+    
+    if Config.EXTERNAL_MAPPING_VERIFICATION is True and ext_token is not None:
+        # TODO: Verify external mapping
+        pass
+    
+    return make_response(subj.to_public_dict(), 200)
 
 @app.route('/auth', methods=['POST'])
 def auth_post():
@@ -57,7 +64,7 @@ def auth_post():
                 service = TokenValidator().validate_token(serv_token)
 
                 if service is None or service.is_service is False:
-                    TokenRevokator().revoke_token(user.token)
+                    TokenRevocator().revoke_token(user.token)
                     return make_response('user authentication must be done by service user', 400)
                 else:
                     if Config.EXTERNAL_MAPPING_VERIFICATION is True:
@@ -67,7 +74,7 @@ def auth_post():
                         gen_token = user.token
                         resp_data = user.to_public_dict()
             else:
-                TokenRevokator().revoke_token(user.token)
+                TokenRevocator().revoke_token(user.token)
                 return make_response('user authentication must be done by service user', 400)
         elif auth_user is None:
             return make_response('user must be provided.', 400)
@@ -90,7 +97,7 @@ def auth_post():
                 service = TokenValidator().validate_token(serv_token)
 
                 if service is None or service.is_service is False:
-                    TokenRevokator().revoke_token(user.token)
+                    TokenRevocator().revoke_token(user.token)
                     return make_response('user authentication must be done by service user', 400)
                 else:
                     if Config.EXTERNAL_MAPPING_VERIFICATION is True:
@@ -100,7 +107,7 @@ def auth_post():
                         gen_token = user.token
                         resp_data = user.to_public_dict()
             else:
-                TokenRevokator().revoke_token(user.token)
+                TokenRevocator().revoke_token(user.token)
                 return make_response('user authentication must be done by service user', 400)
         else:
             return make_response('token must be provided.', 400)
@@ -115,38 +122,47 @@ def auth_post():
 @app.route('/auth', methods=['HEAD'])
 def auth_head():
     """Method to validate tokens"""
-    req_serv_token = request.headers.get('X-Service-Token')
-    req_user_token = request.headers.get('X-User-Token')
-    req_is_ext_token = request.headers.get('X-Is-External-Token', False)
+    serv_token = request.headers.get('X-Service-Token')
+    subj_token = request.headers.get('X-Subject-Token')
+    ext_token = request.headers.get('X-External-Token')
 
-    if req_serv_token is None:
+    if serv_token is None:
         return make_response('service token must be provided.', 400)
     
-    # TODO: Validate service token
+    service = TokenValidator().validate_token(serv_token)
 
-    if req_user_token is None:
-        return make_response('user token must be provided.', 400)
+    if service is None or service.is_service is False:
+        return make_response('validation must be done by service user', 400)
 
-    # TODO: Validate user token (check if external provider provided)
+    subj = TokenValidator().validate_token(subj_token)
 
-    return 'Hello, World!'
+    if subj is None:
+        return make_response('subject token not found', 404)
+    
+    if Config.EXTERNAL_MAPPING_VERIFICATION is True and ext_token is not None:
+        # TODO: Verify external mapping
+        pass
+    
+    return make_response('', 200)
 
 @app.route('/auth', methods=['DELETE'])
 def auth_delete():
     """Method to revoke tokens"""
-    req_serv_token = request.headers.get('X-Service-Token')
-    req_user_token = request.headers.get('X-User-Token')
+    serv_token = request.headers.get('X-Service-Token')
+    subj_token = request.headers.get('X-Subject-Token')
 
-    if req_serv_token is None:
+    if serv_token is None:
         return make_response('service token must be provided.', 400)
     
-    # TODO: Validate service token
+    service = TokenValidator().validate_token(serv_token)
 
-    if req_user_token is None:
-        return make_response('user token must be provided.', 400)
+    if service is None or service.is_service is False:
+        return make_response('validation must be done by service user', 400)
 
-    # TODO: Validate user token
+    if subj_token is None:
+        return make_response('subject token must be provided.', 400)
 
-    # TODO: If both valid, revoke user token
-
-    return 'Hello, World!'
+    if TokenRevocator().revoke_token(subj_token):
+        return make_response('token revoked.', 204)
+    else:
+        return make_response('token could not be revoked.', 400)
