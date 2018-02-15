@@ -3,6 +3,7 @@ from flask import Flask, request, make_response, abort, jsonify
 from authenticators.basic_authentication import BasicAuthentication
 from authenticators.token_authentication import TokenAuthentication
 from validators.token_validation import TokenValidator
+from validators.external_token_validation import ExternalTokenValidator
 from revocators.token_revocation import TokenRevocator
 from user import User
 from settings import Config
@@ -32,8 +33,12 @@ def auth_get():
         return make_response('subject token not found', 404)
     
     if Config.EXTERNAL_MAPPING_VERIFICATION is True and ext_token is not None:
-        # TODO: Verify external mapping
-        pass
+        ext = ExternalTokenValidator().validate_token(ext_token)
+
+        if ext is None or ext.is_authenticated is False:
+            return make_response('external token not authenticated.', 403)
+        else subj.username not in :
+
     
     return make_response(jsonify(subj.to_public_dict()), 200)
 
@@ -42,17 +47,19 @@ def auth_post():
     """Method to authenticate users (using credentials or tokens)"""
     req_data = request.get_json()
     auth_method = req_data.get('method')
+    subj_token = req_data.get('token')
+    ext_token = req_data.get('external_token')
+    auth_user = req_data.get('username')
+    auth_pass = req_data.get('password')
+    serv_token = request.headers.get('X-Service-Token')
 
+    # Output
     resp_data = None
     gen_token = None
 
     if auth_method == 'password':
-        serv_token = request.headers.get('X-Service-Token')
-        auth_user = req_data.get('user')
-        auth_pass = req_data.get('password')
-
         if auth_user is not None and auth_pass is not None:    
-            user = BasicAuthentication().authenticate(username=auth_user,password=auth_pass)
+            user = BasicAuthentication().authenticate(username=auth_user, password=auth_pass)
 
             if user is None:
                 return make_response('user not found.', 404)
@@ -65,27 +72,30 @@ def auth_post():
 
                 if service is None or service.is_service is False:
                     TokenRevocator().revoke_token(user.token)
-                    return make_response('user authentication must be done by service user', 400)
+                    return make_response('user authentication must be done by service user', 403)
                 else:
-                    if Config.EXTERNAL_MAPPING_VERIFICATION is True:
-                        # TODO: Externally verify user
-                        pass
+                    if Config.EXTERNAL_MAPPING_VERIFICATION is True and ext_token is not None:
+                        external = ExternalTokenValidator().validate_token(ext_token)
+
+                        if external.is_authenticated is True:
+                            gen_token = user.token
+                            resp_data = user.to_public_dict()
+                        else:
+                            TokenRevocator().revoke_token(user.token)
+                            return make_response('user authentication must match external service', 403)
                     else:
                         gen_token = user.token
                         resp_data = user.to_public_dict()
             else:
                 TokenRevocator().revoke_token(user.token)
-                return make_response('user authentication must be done by service user', 400)
+                return make_response('user authentication must be done by service user', 403)
         elif auth_user is None:
             return make_response('user must be provided.', 400)
         else:
             return make_response('password must be provided.', 400)
     elif auth_method == 'token':
-        serv_token = request.headers.get('X-Service-Token')
-        auth_token = req_data.get('token')
-
-        if auth_token is not None:
-            user = TokenAuthentication().authenticate(token=auth_token)
+        if subj_token is not None:
+            user = TokenAuthentication().authenticate(token=subj_token)
 
             if user is None:
                 return make_response('token not found.', 404)
@@ -98,17 +108,23 @@ def auth_post():
 
                 if service is None or service.is_service is False:
                     TokenRevocator().revoke_token(user.token)
-                    return make_response('user authentication must be done by service user', 400)
+                    return make_response('user authentication must be done by service user', 403)
                 else:
                     if Config.EXTERNAL_MAPPING_VERIFICATION is True:
-                        # TODO: Externally verify user
-                        pass
+                        external = ExternalTokenValidator().validate_token(ext_token)
+
+                        if external.is_authenticated is True:
+                            gen_token = user.token
+                            resp_data = user.to_public_dict()
+                        else:
+                            TokenRevocator().revoke_token(user.token)
+                            return make_response('user authentication must match external service', 403)
                     else:
                         gen_token = user.token
                         resp_data = user.to_public_dict()
             else:
                 TokenRevocator().revoke_token(user.token)
-                return make_response('user authentication must be done by service user', 400)
+                return make_response('user authentication must be done by service user', 403)
         else:
             return make_response('token must be provided.', 400)
     else:
