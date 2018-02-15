@@ -35,7 +35,7 @@ def auth_get():
         # TODO: Verify external mapping
         pass
     
-    return make_response(subj.to_public_dict(), 200)
+    return make_response(jsonify(subj.to_public_dict()), 200)
 
 @app.route('/auth', methods=['POST'])
 def auth_post():
