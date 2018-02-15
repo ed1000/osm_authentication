@@ -6,7 +6,6 @@ from token_authentication import TokenAuthentication
 from user import User
 
 app = Flask(__name__)
-app.config.from_object('settings.Config')
 
 @app.route('/auth', methods=['GET'])
 def auth_get():

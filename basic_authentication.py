@@ -1,9 +1,12 @@
-from user import User
+import pprint
+
 from keystoneauth1 import session
 from keystoneauth1.identity import v3
 from keystoneauth1.exceptions.base import ClientException
 from keystoneclient.v3 import client
-import pprint
+
+from user import User
+from settings import Config
 
 
 class BasicAuthentication:
@@ -13,14 +16,14 @@ class BasicAuthentication:
     Responsible by authenticating users with basic credentials.
     """
     def __init__(self):
-        self.auth_url = settings.KEYSTONE_URL
-        self.username = settings.KEYSTONE_USERNAME
-        self.password = settings.KEYSTONE_PASSWORD
-        self.project = settings.KEYSTONE_PROJECT
-        self.admin_project = settings.KEYSTONE_ADMIN_PROJECT
-        self.service_project = settings.KEYSTONE_SERVICE_PROJECT
-        self.user_domain_name = settings.KEYSTONE_USER_DOMAIN_NAME
-        self.project_domain_name = settings.KEYSTONE_PROJECT_DOMAIN_NAME
+        self.auth_url = Config.KEYSTONE_URL
+        self.username = Config.KEYSTONE_USERNAME
+        self.password = Config.KEYSTONE_PASSWORD
+        self.project = Config.KEYSTONE_PROJECT
+        self.admin_project = Config.KEYSTONE_ADMIN_PROJECT
+        self.service_project = Config.KEYSTONE_SERVICE_PROJECT
+        self.user_domain_name = Config.KEYSTONE_USER_DOMAIN_NAME
+        self.project_domain_name = Config.KEYSTONE_PROJECT_DOMAIN_NAME
 
     def authenticate(self, username=None, password=None):
         """
@@ -62,6 +65,8 @@ class BasicAuthentication:
                 username=username,
                 password=password,
                 user_domain_name=self.user_domain_name)
+
+            pprint.pprint(token)
 
             projects = keystone.projects.list(user=token.get('user').get('id'))
 

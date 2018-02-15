@@ -1,4 +1,4 @@
-class Config(object):
+class Config:
     KEYSTONE_URL = ''
     KEYSTONE_USERNAME = ''
     KEYSTONE_PASSWORD = ''
