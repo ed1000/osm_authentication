@@ -37,8 +37,6 @@ def auth_get():
 
         if ext is None or ext.is_authenticated is False:
             return make_response('external token not authenticated.', 403)
-        else subj.username not in :
-
     
     return make_response(jsonify(subj.to_public_dict()), 200)
 
@@ -156,8 +154,10 @@ def auth_head():
         return make_response('subject token not found', 404)
     
     if Config.EXTERNAL_MAPPING_VERIFICATION is True and ext_token is not None:
-        # TODO: Verify external mapping
-        pass
+        ext = ExternalTokenValidator().validate_token(ext_token)
+
+        if ext is None or ext.is_authenticated is False:
+            return make_response('external token not authenticated.', 403)
     
     return make_response('', 200)
 
