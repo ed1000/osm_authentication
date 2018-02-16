@@ -20,23 +20,23 @@ def auth_get():
     ext_token = request.headers.get('X-External-Token')
 
     if serv_token is None:
-        return make_response('service token must be provided.', 400)
+        abort(400, description='service token must be provided.')
     
     service = TokenValidator().validate_token(serv_token)
 
     if service is None or service.is_service is False:
-        return make_response('validation must be done by service user', 400)
+        abort(400, description='validation must be done by service user')
 
     subj = TokenValidator().validate_token(subj_token)
 
     if subj is None:
-        return make_response('subject token not found', 404)
+        abort(404, description='subject token not found')
     
     if Config.EXTERNAL_MAPPING_VERIFICATION is True and ext_token is not None:
         ext = ExternalTokenValidator().validate_token(ext_token)
 
         if ext is None or ext.is_authenticated is False:
-            return make_response('external token not authenticated.', 403)
+            abort(403, description='external token not authenticated.')
     
     return make_response(jsonify(subj.to_public_dict()), 200)
 
@@ -60,7 +60,7 @@ def auth_post():
             user = BasicAuthentication().authenticate(username=auth_user, password=auth_pass)
 
             if user is None:
-                return make_response('user not found.', 404)
+                abort(404, description='user not found.')
 
             if user.is_service is True:
                 gen_token = user.token
@@ -70,7 +70,7 @@ def auth_post():
 
                 if service is None or service.is_service is False:
                     TokenRevocator().revoke_token(user.token)
-                    return make_response('user authentication must be done by service user', 403)
+                    abort(403, description='user authentication must be done by service user.')
                 else:
                     if Config.EXTERNAL_MAPPING_VERIFICATION is True and ext_token is not None:
                         external = ExternalTokenValidator().validate_token(ext_token)
@@ -80,23 +80,23 @@ def auth_post():
                             resp_data = user.to_public_dict()
                         else:
                             TokenRevocator().revoke_token(user.token)
-                            return make_response('user authentication must match external service', 403)
+                            abort(403, description='user authentication must match external service.')
                     else:
                         gen_token = user.token
                         resp_data = user.to_public_dict()
             else:
                 TokenRevocator().revoke_token(user.token)
-                return make_response('user authentication must be done by service user', 403)
+                abort(403, description='user authentication must be done by service user.')
         elif auth_user is None:
-            return make_response('user must be provided.', 400)
+            abort(400, description='user must be provided.')
         else:
-            return make_response('password must be provided.', 400)
+            abort(400, description='password must be provided.')
     elif auth_method == 'token':
         if subj_token is not None:
             user = TokenAuthentication().authenticate(token=subj_token)
 
             if user is None:
-                return make_response('token not found.', 404)
+                abort(400, description='token not found.')
 
             if user.is_service is True:
                 gen_token = user.token
@@ -106,7 +106,7 @@ def auth_post():
 
                 if service is None or service.is_service is False:
                     TokenRevocator().revoke_token(user.token)
-                    return make_response('user authentication must be done by service user', 403)
+                    abort(403, description='user authentication must be done by service user.')
                 else:
                     if Config.EXTERNAL_MAPPING_VERIFICATION is True:
                         external = ExternalTokenValidator().validate_token(ext_token)
@@ -116,17 +116,17 @@ def auth_post():
                             resp_data = user.to_public_dict()
                         else:
                             TokenRevocator().revoke_token(user.token)
-                            return make_response('user authentication must match external service', 403)
+                            abort(403, description='user authentication must match external service.')
                     else:
                         gen_token = user.token
                         resp_data = user.to_public_dict()
             else:
                 TokenRevocator().revoke_token(user.token)
-                return make_response('user authentication must be done by service user', 403)
+                abort(403, description='user authentication must be done by service user')
         else:
-            return make_response('token must be provided.', 400)
+            abort(400, description='token must be provided.')
     else:
-        return make_response('method must be password or token.', 400)
+        abort(400, description='method must be password or token.')
 
     resp = make_response(jsonify(resp_data), 201)
     resp.headers['X-Subject-Token'] = gen_token
@@ -141,23 +141,23 @@ def auth_head():
     ext_token = request.headers.get('X-External-Token')
 
     if serv_token is None:
-        return make_response('service token must be provided.', 400)
+        abort(400, description='service token must be provided.')
     
     service = TokenValidator().validate_token(serv_token)
 
     if service is None or service.is_service is False:
-        return make_response('validation must be done by service user', 400)
+        abort(400, description='validation must be done by service user')
 
     subj = TokenValidator().validate_token(subj_token)
 
     if subj is None:
-        return make_response('subject token not found', 404)
+        abort(404, description='subject token not found')
     
     if Config.EXTERNAL_MAPPING_VERIFICATION is True and ext_token is not None:
         ext = ExternalTokenValidator().validate_token(ext_token)
 
         if ext is None or ext.is_authenticated is False:
-            return make_response('external token not authenticated.', 403)
+            abort(403, description='external token not authenticated.')
     
     return make_response('', 200)
 
@@ -168,17 +168,17 @@ def auth_delete():
     subj_token = request.headers.get('X-Subject-Token')
 
     if serv_token is None:
-        return make_response('service token must be provided.', 400)
+        abort(400, description='service token must be provided.')
     
     service = TokenValidator().validate_token(serv_token)
 
     if service is None or service.is_service is False:
-        return make_response('validation must be done by service user', 400)
+        abort(400, description='validation must be done by service user')
 
     if subj_token is None:
-        return make_response('subject token must be provided.', 400)
+        abort(400, description='subject token must be provided.')
 
     if TokenRevocator().revoke_token(subj_token):
         return make_response('token revoked.', 204)
     else:
-        return make_response('token could not be revoked.', 400)
+        abort(400, description='token could not be revoked.')
