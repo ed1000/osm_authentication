@@ -1,0 +1,199 @@
+openapi: 3.0.0
+info:
+  description: Authentication based in Openstack Keystone
+  version: 1.0.0
+  title: OSM Keystone Authentication
+  contact:
+    email: eduardosousa@av.it.pt
+  license:
+    name: GNU General Public License v3.0
+    url: https://www.gnu.org/licenses/gpl-3.0-standalone.html
+paths:
+  /auth:
+    get:
+      summary: Validate token
+      description: This endpoint is used to check if a token is valid and get the associated information.
+      parameters: 
+        - in: header
+          name: X-Service-Token
+          description: Token that belongs to the service trying to validate
+          schema:
+            type: string
+          required: true
+        - in: header
+          name: X-Subject-Token
+          description: Token to be validated
+          schema:
+            type: string
+          required: true
+        - in: header
+          name: X-External-Token
+          description: External token that represents the user in another system
+          schema:
+            type: string
+          required: false
+      responses:
+        200:
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        400:
+          description: |
+            service token must be provided
+            validation must be done by service user
+        403:
+          description: external token not authenticated
+        404:
+          description: subject token not found
+    head:
+      summary: Validate token
+      description: This endpoint is used to check if a token is valid.
+      parameters: 
+        - in: header
+          name: X-Service-Token
+          description: Token that belongs to the service trying to validate
+          schema:
+            type: string
+          required: true
+        - in: header
+          name: X-Subject-Token
+          description: Token to be validated
+          schema:
+            type: string
+          required: true
+        - in: header
+          name: X-External-Token
+          description: External token that represents the user in another system
+          schema:
+            type: string
+          required: false
+      responses:
+        200:
+          description: token is valid
+        400:
+          description: |
+            service token must be provided
+            validation must be done by service user
+        403:
+          description: external token not authenticated
+        404:
+          description: subject token not found
+    post:
+      summary: Authenticate service or subject
+      description: |
+        This endpoint is used to authenticate subjects and services. A service can authenticate itself. A subject must be authenticated by a service, therefore a service token must be passed.
+        Authentication can also be done using valid tokens. In this case an old valid token can be used to obtain a new one.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/BasicAuthRequest'
+                - $ref: '#/components/schemas/TokenAuthRequest'
+      parameters: 
+        - in: header
+          name: X-Service-Token
+          description: Token that belongs to the service authenticating the subject. Only required if authenticating a subject.
+          schema:
+            type: string
+          required: false
+      responses:
+        405:
+          description: Invalid input
+    delete:
+      summary: Revoke token
+      description: This endpoint is used to revoke tokens.
+      parameters: 
+        - in: header
+          name: X-Service-Token
+          description: Token that belongs to the service revoking a token
+          schema:
+            type: string
+          required: true
+        - in: header
+          name: X-Subject-Token
+          description: Token to be revoked
+          schema:
+            type: string
+          required: true
+      responses:
+        204:
+          description: token revoked
+        400:
+          description: |
+            service token must be provided
+            revoking must be done by service user
+            subject token must be provided
+            token could not be revoked
+components:
+  schemas:
+    Subject:
+      type: object
+      properties:
+        username:
+          type: string
+          description: username associated with the token
+        projects:
+          type: array
+          items:
+           type: string
+          description: projects associated with the token
+        is_authenticated:
+          type: boolean
+          description: is the subject authenticated
+        is_enabled:
+          type: boolean
+          description: is the user associated with any project
+        issued_at:
+          type: string
+          format: date-time
+          description: timestamp when the token was issued
+        expires_at:
+          type: string
+          format: date-time
+          description: timestamp when the token will expire
+      required:
+        - username
+        - projects
+        - is_authenticated
+        - is_enabled
+        - issued_at
+        - expires_at
+    BasicAuthRequest:
+      type: object
+      properties:
+        method:
+          type: string
+          description: method defining what authentication is being performed
+          enum: [password]
+        external_token:
+          type: string
+          description: external token used to verify external identity
+        username:
+          type: string
+          description: username that identifies subject
+        password:
+          type: string
+          description: password that authenticates subject
+      required:
+        - method
+        - username
+        - password
+    TokenAuthRequest:
+      type: object
+      properties:
+        method:
+          type: string
+          description: method defining what authentication is being performed
+          enum: [token]
+        token:
+          type: string
+          description: token that identifies subject
+        external_token:
+          type: string
+          description: external token used to verify external identity
+      required:
+        - method
+        - token
